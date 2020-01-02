@@ -31,5 +31,5 @@ class AuthAPIEndPoint(APIEndPoint):
             raise ArcsecondError("Agreement to Terms and Conditions not accepted. Aborting registration.")
 
         url = self._root_url() + API_AUTH_PATH_REGISTER
-        payload = {'username': username, 'email': email, 'password1': password1, 'password2': password2}
+        payload = {'username': username, 'email': email, 'password': password1, 're_password': password2}
         return self._perform_request(url, 'post', payload)
