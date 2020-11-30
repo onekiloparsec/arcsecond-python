@@ -23,7 +23,7 @@ from arcsecond.api.constants import (
 
 from arcsecond.api.error import ArcsecondError
 from arcsecond.api.helpers import extract_multipart_encoder_file_fields
-from arcsecond.config import config_file_read_api_key, config_file_read_organisation_memberships
+from arcsecond.config import config_file_read_key, config_file_read_organisation_memberships
 from arcsecond.options import State
 
 from ._fileuploader import AsyncFileUploader
@@ -205,7 +205,10 @@ class APIEndPoint(object):
             if self.state.verbose:
                 click.echo('Checking local API key... ', nl=False)
 
-            api_key = config_file_read_api_key(self.state.config_section())
+            api_key = config_file_read_key('api_key', self.state.config_section())
+            if not api_key:
+                api_key = config_file_read_key('oort_key', self.state.config_section())
+
             if not api_key:
                 raise ArcsecondError('Missing API key. You must login first: $ arcsecond login')
 

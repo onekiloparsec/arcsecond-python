@@ -1,17 +1,13 @@
-import httpretty
-from click.testing import CliRunner
 from unittest import TestCase
 
-from arcsecond import cli, ArcsecondAPI
-from arcsecond.api.error import ArcsecondError
-from arcsecond.config import config_file_clear_section, config_file_save_api_key, \
-    config_file_save_organisation_membership
+import httpretty
+from click.testing import CliRunner
 
-from tests.utils import (register_successful_login,
-                         register_successful_login,
-                         mock_http_get,
-                         mock_http_post,
-                         mock_url_path)
+from arcsecond import ArcsecondAPI, cli
+from arcsecond.api.error import ArcsecondError
+from arcsecond.config import (config_file_clear_section, config_file_save_organisation_membership,
+                              config_file_save_username_and_key)
+from tests.utils import (mock_http_get, mock_http_post, mock_url_path, register_successful_login)
 
 
 class NightLogsInOrganisationsTestCase(TestCase):
@@ -80,7 +76,7 @@ class NightLogsInOrganisationsTestCase(TestCase):
 class NightLogsInOrganisationsModuleTestCase(TestCase):
     def setUp(self):
         config_file_clear_section('debug')
-        config_file_save_api_key('11223344556677889900', 'cedric', section='test')
+        config_file_save_username_and_key('cedric', 'api_key', '11223344556677889900', section='test')
         config_file_save_organisation_membership('saao', 'superadmin', section='test')
         httpretty.enable()
 

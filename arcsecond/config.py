@@ -19,13 +19,13 @@ def config_file_is_valid(section='main'):
     return config[section].get('api_key')
 
 
-def config_file_save_api_key(api_key, username, section='main'):
+def config_file_save_username_and_key(username, key_name, key_value, section='main'):
     config = ConfigParser()
     config.read(config_file_path())
     if section not in config.keys():
         config.add_section(section)
     config.set(section, 'username', username)
-    config.set(section, 'api_key', api_key)
+    config.set(section, key_name, key_value)
     with open(config_file_path(), 'w') as f:
         config.write(f)
 
@@ -56,10 +56,6 @@ def config_file_read_key(key, section='main'):
     if section not in config.sections():
         return None
     return config[section].get(key, None)
-
-
-def config_file_read_api_key(section='main'):
-    return config_file_read_key('api_key', section=section)
 
 
 def config_file_read_username(section='main'):

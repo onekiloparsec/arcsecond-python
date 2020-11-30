@@ -10,9 +10,10 @@ from pygments import highlight
 from pygments.formatters.terminal import TerminalFormatter
 from pygments.lexers.data import JsonLexer
 
-from arcsecond.config import (config_file_path, config_file_read_api_key, config_file_read_organisation_memberships,
-                              config_file_read_username, config_file_save_api_key,
-                              config_file_save_organisation_membership)
+from arcsecond.config import (config_file_path, config_file_read_key,
+                              config_file_read_organisation_memberships,
+                              config_file_read_username, config_file_save_organisation_membership,
+                              config_file_save_username_and_key)
 from arcsecond.options import State
 from .auth import AuthAPIEndPoint
 from .endpoints import (ActivitiesAPIEndPoint, AsyncFileUploader, CalibrationsAPIEndPoint, CataloguesAPIEndPoint,
@@ -193,7 +194,7 @@ class ArcsecondAPI(object):
             click.echo(click.style(ECHO_PREFIX + message, fg='red'))
 
     @classmethod
-    def _check_memberships(cls, state, username):
+    def _check_memberships(cls, state, username, oort_only=False):
         ArcsecondAPI._echo_message(state, f'Checking Memberships...')
         profile, error = PersonalProfileAPIEndPoint(state.make_new_silent()).read(username)
         if error:
@@ -208,7 +209,7 @@ class ArcsecondAPI(object):
                 ArcsecondAPI._echo_message(state, 'Membership denied.')
 
     @classmethod
-    def _get_and_save_api_key(cls, state, username, auth_token):
+    def _get_and_save_api_key(cls, state, username, auth_token, oort_only=False):
         # To get API key one must fetch it with Auth token obtained via login.
         endpoint = ProfileAPIKeyAPIEndPoint(state.make_new_silent())
         endpoint.use_headers({'Authorization': 'Token ' + auth_token})
@@ -216,15 +217,17 @@ class ArcsecondAPI(object):
         if error:
             ArcsecondAPI._echo_error(state, error)
         if result:
-            config_file_save_api_key(result['api_key'], username, state.config_section())
-            msg = f'Successful API key retrieval and storage in {config_file_path()}. Enjoy.'
+            key_name = 'oort_key' if oort_only else 'api_key'
+            config_file_save_username_and_key(username, key_name, result.get(key_name), state.config_section())
+            msg = f'Successful key retrieval and storage in {config_file_path()}. Enjoy.'
             ArcsecondAPI._echo_message(state, msg)
         return result, error
 
     @classmethod
     def is_logged_in(cls, state=None, **kwargs):
         state = get_api_state(state, **kwargs)
-        return config_file_read_api_key(section=state.config_section()) is not None
+        return config_file_read_key('api_key', section=state.config_section()) is not None or \
+               config_file_read_key('oort_key', section=state.config_section()) is not None
 
     @classmethod
     def username(cls, state=None, **kwargs):
@@ -234,7 +237,12 @@ class ArcsecondAPI(object):
     @classmethod
     def api_key(cls, state=None, **kwargs):
         state = get_api_state(state, **kwargs)
-        return config_file_read_api_key(section=state.config_section()) or ''
+        return config_file_read_key('api_key', section=state.config_section()) or ''
+
+    @classmethod
+    def oort_key(cls, state=None, **kwargs):
+        state = get_api_state(state, **kwargs)
+        return config_file_read_key('oort_key', section=state.config_section()) or ''
 
     @classmethod
     def memberships(cls, state=None, **kwargs):
@@ -243,7 +251,7 @@ class ArcsecondAPI(object):
         return {m: raw_memberships[m] for m in raw_memberships}
 
     @classmethod
-    def login(cls, username, password, state=None, **kwargs):
+    def login(cls, username, password, state=None, oort_only=False, **kwargs):
         state = get_api_state(state, **kwargs)
         result, error = AuthAPIEndPoint(state).login(username, password)
         if error:
@@ -251,8 +259,9 @@ class ArcsecondAPI(object):
             return result, error
         elif result:
             # We replace result and error of login with that of api key
-            result, error = ArcsecondAPI._get_and_save_api_key(state, username, result['key'])
-            ArcsecondAPI._check_memberships(state, username)
+            auth_token = result.get('key')
+            result, error = ArcsecondAPI._get_and_save_api_key(state, username, auth_token, oort_only=oort_only)
+            ArcsecondAPI._check_memberships(state, username, oort_only=oort_only)
             return result, error
 
     @classmethod

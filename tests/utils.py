@@ -4,9 +4,8 @@ import httpretty
 
 from arcsecond import cli
 from arcsecond.api.constants import API_AUTH_PATH_LOGIN, ARCSECOND_API_URL_DEV
-from arcsecond.config import (config_file_clear_section,
-                              config_file_save_api_key,
-                              config_file_save_organisation_membership)
+from arcsecond.config import (config_file_clear_section, config_file_save_organisation_membership,
+                              config_file_save_username_and_key)
 
 TEST_LOGIN_USERNAME = 'robot1'
 TEST_LOGIN_PASSWORD = 'robotpass'
@@ -66,7 +65,7 @@ def register_successful_login(runner, subdomain='robotland', role='member'):
 def save_test_credentials(username, memberships=None):
     if memberships is None:
         memberships = dict()
-    config_file_save_api_key(TEST_API_KEY, username, section='debug')
+    config_file_save_username_and_key(username, 'api_key', TEST_API_KEY, section='debug')
     for k, v in memberships.items():
         config_file_save_organisation_membership(k, v, 'debug')
 
